@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DJ AXEL - MOBILE STUDIO PRO</title>
+    <script src="https://unpkg.com/wavesurfer.js@6.6.4/dist/wavesurfer.js"></script>
+    <style>
+        body { 
+            background: #050505; 
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .player-box { 
+            width: 100%; 
+            max-width: 500px; 
+            background: #111; 
+            padding: 20px; 
+            border-radius: 25px; 
+            border-left: 5px solid #8a2be2; 
+            text-align: center; 
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8); 
+        }
+        h1 { color: #8a2be2; letter-spacing: 5px; margin: 10px 0 0 0; text-transform: uppercase; font-size: 22px; }
+        .studio-text { color: #444; font-size: 8px; letter-spacing: 8px; margin-bottom: 20px; text-transform: uppercase; }
+        
+        #waveform { 
+            width: 100%; 
+            height: 100px; 
+            background: rgba(255,255,255,0.02); 
+            border-radius: 15px; 
+            margin: 15px 0;
+        }
+
+        .controls { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-bottom: 25px; 
+        }
+        button, .file-btn { 
+            background: #8a2be2; 
+            border: none; 
+            color: white; 
+            padding: 15px 10px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            font-size: 11px; 
+            width: 100%;
+        }
+        .secondary { background: #222; border: 1px solid #333; }
+        #shareBtn { 
+            background: linear-gradient(45deg, #f09433, #bc1888); 
+            grid-column: span 2; /* Бутонът Share заема целия ред на телефон */
+        }
+
+        .sliders { 
+            display: flex; 
+            flex-direction: column; /* Плъзгачите един под друг за по-лесно управление с палец */
+            gap: 15px; 
+            margin-top: 10px; 
+            align-items: center;
+        }
+        .slider-box { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            width: 100%;
+            justify-content: space-between;
+        }
+        .slider-box label { font-size: 10px; color: #555; width: 40px; text-align: left; }
+        
+        input[type=range] { 
+            flex-grow: 1;
+            accent-color: #8a2be2; 
+            height: 10px; /* По-дебел плъзгач за лесно хващане */
+        }
+    </style>
+</head>
+<body>
+
+<div class="player-box">
+    <h1>DJ AXEL</h1>
+    <div class="studio-text">MOBILE STUDIO</div>
+    <div id="waveform"></div>
+    
+    <div class="controls">
+        <button id="playBtn">PLAY / PAUSE</button>
+        <label for="upload" class="file-btn secondary">OPEN MP3</label>
+        <button id="bassBtn" class="secondary">BASS BOOST</button>
+        <button id="shareBtn">SHARE MIX</button>
+        <input type="file" id="upload" accept="audio/*" style="display:none">
+    </div>
+
+    <div class="sliders">
+        <div class="slider-box"><label>LOW</label><input type="range" id="low" min="-20" max="25" value="0"></div>
+        <div class="slider-box"><label>MID</label><input type="range" id="mid" min="-20" max="20" value="0"></div>
+        <div class="slider-box"><label>HIGH</label><input type="range" id="high" min="-20" max="20" value="0"></div>
+    </div>
+</div>
+
+<script>
+    var wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: '#333',
+        progressColor: '#8a2be2',
+        barWidth: 3,
+        height: 100,
+        responsive: true, // Вълната се напасва при обръщане на телефона
+        partialRender: true
+    });
+
+    var lowFilter, midFilter, highFilter;
+
+    wavesurfer.on('ready', function () {
+        if (!lowFilter) {
+            var ctx = wavesurfer.backend.getAudioContext();
+            lowFilter = ctx.createBiquadFilter();
+            lowFilter.type = 'lowshelf';
+            lowFilter.frequency.value = 250;
+            midFilter = ctx.createBiquadFilter();
+            midFilter.type = 'peaking';
+            midFilter.frequency.value = 1000;
+            highFilter = ctx.createBiquadFilter();
+            highFilter.type = 'highshelf';
+            highFilter.frequency.value = 5000;
+            wavesurfer.backend.setFilters([lowFilter, midFilter, highFilter]);
+        }
+    });
+
+    document.getElementById('playBtn').onclick = function() { wavesurfer.playPause(); };
+    document.getElementById('low').oninput = function(e) { if(lowFilter) lowFilter.gain.value = e.target.value; };
+    document.getElementById('mid').oninput = function(e) { if(midFilter) midFilter.gain.value = e.target.value; };
+    document.getElementById('high').oninput = function(e) { if(highFilter) highFilter.gain.value = e.target.value; };
+
+    var bass = false;
+    document.getElementById('bassBtn').onclick = function() {
+        bass = !bass;
+        if(lowFilter) lowFilter.gain.value = bass ? 25 : document.getElementById('low').value;
+        this.style.background = bass ? "#ff00ff" : "#222";
+        this.innerText = bass ? "BASS: ON" : "BASS BOOST";
+    };
+
+    document.getElementById('upload').onchange = function(e) {
+        var file = e.target.files[0];
+        if (file) { wavesurfer.loadBlob(file); }
+    };
+
+    document.getElementById('shareBtn').onclick = function() {
+        if (navigator.share) {
+            navigator.share({ title: 'DJ AXEL', text: 'Слушай моя ремикс!', url: window.location.href });
+        }
+    };
+</script>
+</body>
+</html>
