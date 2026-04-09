@@ -109,6 +109,13 @@
 </div>
 
 <script>
+    // Това следи дали аудиото "заспива" и го буди автоматично
+    setInterval(() => {
+    if (typeof audioContext !== 'undefined' && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    }, 1000); // Проверява всяка секунда
+    
     // Това ще активира аудиото веднага щом докоснеш екрана на телефона
     document.body.addEventListener('touchstart', function() {
     if (typeof audioContext !== 'undefined' && audioContext.state === 'suspended') {
