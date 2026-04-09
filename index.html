@@ -109,6 +109,13 @@
 </div>
 
 <script>
+    // Това ще активира аудиото веднага щом докоснеш екрана на телефона
+    document.body.addEventListener('touchstart', function() {
+    if (typeof audioContext !== 'undefined' && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    }, 
+    { once: true }); // Изпълнява се само веднъж при първото докосване
     var wavesurfer = WaveSurfer.create({
         container: '#waveform',
         waveColor: '#333',
